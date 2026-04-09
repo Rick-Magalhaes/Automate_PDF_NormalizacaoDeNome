@@ -318,8 +318,8 @@ def processar_pdf(caminho: Path) -> None:
             cpf   = extrair_cpf(texto)
             votos = extrair_votos(pdf)
 
-        logging.info("%s | nome=%s | cpf=%s | votos=%s", caminho.name, nome, cpf, votos)
-        print(f"  → nome={nome} | cpf={cpf} | votos={votos}")
+        logging.info("%s | OK | votos=%s", caminho.name, votos)
+        print(f"  → {caminho.name} | votos={votos}")
 
         erros = validar(nome, cpf, votos)
         if erros:
