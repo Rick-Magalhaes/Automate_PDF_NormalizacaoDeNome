@@ -15,6 +15,12 @@ MAP_ESCRITORIOS = {
     "sob": "SOB",
     "machado meyer": "MM",
     "machado": "MM",
+    "pga": "PGA",
+    "ctp": "CTP",
+    "br partners": "BR",
+    "journey capital": "JNEY",
+    "virtus br": "VIR",
+    "g5 partners": "G5"
 }
 
 LOG_FILE = "processamento.log"
@@ -38,7 +44,14 @@ def normalizar(texto: str) -> str:
 
 def limpar_nome(nome: str) -> str:
     nome = re.sub(r"\s+", " ", nome.strip())
-    return nome.title()
+
+    # remove lixo grudado (null, cliente, etc)
+    nome = re.sub(r"(null|cliente|cpf|rg|inscrito)", "", nome, flags=re.IGNORECASE)
+
+    # remove múltiplos espaços novamente
+    nome = re.sub(r"\s+", " ", nome)
+
+    return nome.title().strip()
 
 
 def tem_marcacao(texto: str) -> bool:
@@ -103,42 +116,48 @@ def extrair_nome(texto: str) -> str:
 # VOTOS
 # =========================
 def extrair_voto_simples(bloco: str) -> str:
-    bloco_norm = normalizar(bloco)
+    linhas = bloco.split("\n")
 
-    if not tem_marcacao(bloco):
-        return None
+    for linha in linhas:
+        linha_norm = normalizar(linha)
 
-    if "aprova" in bloco_norm:
-        return "A"
-    if "reprova" in bloco_norm:
-        return "R"
-    if "abstem" in bloco_norm or "abst" in bloco_norm:
-        return "AB"
+        if not tem_marcacao(linha):
+            continue
+
+        if "aprova" in linha_norm:
+            return "A"
+        if "reprova" in linha_norm:
+            return "R"
+        if "abstem" in linha_norm or "abst" in linha_norm:
+            return "AB"
 
     return None
 
 
 def extrair_escritorio(bloco: str) -> str:
-    bloco_norm = normalizar(bloco)
+    linhas = bloco.split("\n")
 
-    if not tem_marcacao(bloco):
-        return None
+    for linha in linhas:
+        linha_norm = normalizar(linha)
 
-    for nome, sigla in MAP_ESCRITORIOS.items():
-        if nome in bloco_norm:
-            return sigla
+        if not tem_marcacao(linha):
+            continue
 
-    if "abstem" in bloco_norm:
-        return "AB"
+        # abstenção
+        if "abstem" in linha_norm:
+            return "AB"
+
+        # escritórios
+        for nome, sigla in MAP_ESCRITORIOS.items():
+            if normalizar(nome) in linha_norm:
+                return sigla
 
     return None
 
 
 def separar_itens(texto: str):
-    # tentativa principal
     itens = re.split(r"\(\s*\d+\s*\)", texto)
 
-    # fallback
     if len(itens) < 6:
         itens = re.split(r"\n\s*\d+[\.\)]", texto)
 
